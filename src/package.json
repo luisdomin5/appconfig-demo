@@ -1,0 +1,22 @@
+{
+  "name": "appconfig-demo",
+  "version": "1.0.0",
+  "description": "AWS AppConfig Demo",
+  "scripts": {
+    "loadtest": "artillery run loadtest.yaml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sthulb/appconfig-demo.git"
+  },
+  "author": "Simon Thulbourn",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sthulb/appconfig-demo/issues"
+  },
+  "homepage": "https://github.com/sthulb/appconfig-demo#readme",
+  "dependencies": {
+    "artillery": "^1.6.0-29",
+    "artillery-plugin-aws-sigv4": "0.0.3"
+  }
+}

@@ -1,0 +1,93 @@
+  
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Resources:
+  ConfigValue:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/config
+      Type: String
+      Value: '{ "hello": "world" }'
+
+  ConfigRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appconfig.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: appconfig-config
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Resource: 
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ConfigValue}
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+
+  Application:
+    Type: AWS::AppConfig::Application
+    Properties:
+      Name: app-config
+    
+  Environment:
+    Type: AWS::AppConfig::Environment
+    Properties:
+      ApplicationId: !Ref Application
+      Name: prod
+
+  Config:
+    Type: AWS::AppConfig::ConfigurationProfile
+    Properties:
+      ApplicationId: !Ref Application
+      LocationUri: !Sub ssm-parameter://${ConfigValue}
+      Name: prod-config
+      RetrievalRoleArn: !GetAtt ConfigRole.Arn
+  
+  DeploymentStrategy:
+    Type: AWS::AppConfig::DeploymentStrategy
+    Properties:
+      DeploymentDurationInMinutes: 1
+      GrowthFactor: 1.0
+      Name: DepStrat
+      ReplicateTo: NONE
+
+  Deployment:
+    Type: AWS::AppConfig::Deployment
+    Properties:
+      ApplicationId: !Ref Application
+      ConfigurationProfileId: !Ref Config
+      ConfigurationVersion: 1
+      DeploymentStrategyId: !Ref DeploymentStrategy
+      EnvironmentId: !Ref Environment
+    
+  DemoFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: lambda
+      Timeout: 29
+      Runtime: python3.7
+      Tracing: Active
+      MemorySize: 512
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Resource: 
+                - '*'
+              Action:
+                - appconfig:*
+      Environment:
+        Variables:
+          AppId: !Ref Application
+          EnvId: !Ref Environment
+          ConfigId: !Ref Config

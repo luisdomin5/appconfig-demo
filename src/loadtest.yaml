@@ -1,0 +1,19 @@
+config:
+  # Update with your AWS region name
+  target: https://lambda.region.amazonaws.com
+  phases:
+    - duration: 300
+      arrivalRate: 10
+      rampTo: 1000
+  plugins:
+    aws-sigv4:
+      serviceName: lambda
+
+scenarios:
+  - flow:
+    - post:
+        # Update the URL with your function's deployed name
+        url: "/2015-03-31/functions/function_name/invocations"
+        json:
+          foo: bar
+        beforeRequest: addAmazonSignatureV4
